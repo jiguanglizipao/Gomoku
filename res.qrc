@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/">
+        <file>res/5x5.ff</file>
+        <file>res/6x6.ff</file>
+        <file>res/7x7.ff</file>
+        <file>res/broke.wav</file>
+        <file>res/flow.wav</file>
+        <file>res/success.wav</file>
+        <file>res/zerg.png</file>
+        <file>res/flowfree.png</file>
+    </qresource>
+</RCC>
