@@ -5,7 +5,15 @@
 #include "gamescene.h"
 #include "gamesolver.h"
 #include <QTcpSocket>
+#include <QTcpServer>
 #include <QTimer>
+
+struct MessageFlag
+{
+    int New, Stop, Start, Pause, Load, Save, Undo;
+};
+
+
 
 namespace Ui {
 class MainWindow;
@@ -23,6 +31,8 @@ private slots:
     void timeout();
 
     void connectError(QAbstractSocket::SocketError error);
+
+    void newConnection();
 
     void connected();
 
@@ -44,6 +54,8 @@ private slots:
 
     void on_loadButton_clicked();
 
+    void on_listenButton_clicked();
+
 public slots:
     void exchange(int x);
 
@@ -51,9 +63,11 @@ private:
     GameScene *gameScene;
     Ui::MainWindow *ui;
     QTcpSocket *socket;
+    QTcpServer *server;
     QString socketData;
     QTimer *timer;
     int timeNum;
+    MessageFlag flag;
 };
 
 #endif // MAINWINDOW_H

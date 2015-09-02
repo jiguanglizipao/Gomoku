@@ -4,8 +4,8 @@
 #include <QTextStream>
 
 
-GameScene::GameScene(QWidget *parent, int _size)
-    :QGraphicsScene(parent), size(_size), n(14), pressed(-1), type(0),  disable(true)
+GameScene::GameScene(QWidget *parent, int _type)
+    :QGraphicsScene(parent), n(14), pressed(-1), type(_type),  disable(true)
 {
     //this->setBackgroundBrush(Qt::yellow);
     Init();
@@ -17,7 +17,6 @@ void GameScene::Init()
     memset(map, -1, sizeof(map));
     history[0].clear();
     history[1].clear();
-    type = 0;
     drawMap();
 }
 
@@ -133,7 +132,7 @@ void GameScene::Release(int x, int y, int _type)
             if(fx>0 && fy>0 && fx<Psize/2 && fy<Psize/2)
             {
                 if(map[i][j] == -1){
-                    map[i][j] = type, type^=1;
+                    map[i][j] = type;//, type^=1;
                     memset(undo, 0, sizeof(undo));
                     history[map[i][j]].push_back(QPoint(i, j));
                     emit exchange(type);

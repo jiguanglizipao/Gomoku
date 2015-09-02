@@ -19,7 +19,7 @@ class GameScene : public QGraphicsScene
     Q_OBJECT
 
 public:
-    GameScene(QWidget *parent = 0, int _size = 700);
+    GameScene(QWidget *parent = 0, int _type=0);
     QString toString();
     bool fromString(QString str);
     bool disable;

@@ -21,6 +21,11 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(socket, SIGNAL(connected()), this, SLOT(connected()));
     connect(socket, SIGNAL(readyRead()), this, SLOT(getData()));
 
+    server = new QTcpServer(this);
+    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError(QAbstractSocket::SocketError)));
+    connect(socket, SIGNAL(connected()), this, SLOT(connected()));
+    connect(socket, SIGNAL(readyRead()), this, SLOT(getData()));
+
     timer = new QTimer(this);
     timeNum =  0;
     connect(timer, SIGNAL(timeout()), this, SLOT(timeout()));
@@ -48,6 +53,18 @@ void MainWindow::connectError(QAbstractSocket::SocketError error)
 void MainWindow::connected()
 {
     QMessageBox::information(this, "Connected", "Connected to server successfuly");
+    ui->connectButton->setDisabled(true);
+    ui->listenButton->setDisabled(true);
+    ui->newButton->setEnabled(true);
+}
+
+void MainWindow::newConnection()
+{
+    socket = server->nextPendingConnection();
+    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError(QAbstractSocket::SocketError)));
+    connect(socket, SIGNAL(connected()), this, SLOT(connected()));
+    connect(socket, SIGNAL(readyRead()), this, SLOT(getData()));
+    ui->newButton->setEnabled(true);
 }
 
 void MainWindow::timeout()
@@ -67,13 +84,68 @@ void MainWindow::timeout()
 
 void MainWindow::on_connectButton_clicked()
 {
+    socket = new QTcpSocket(this);
+    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError(QAbstractSocket::SocketError)));
+    connect(socket, SIGNAL(connected()), this, SLOT(connected()));
+    connect(socket, SIGNAL(readyRead()), this, SLOT(getData()));
     socket->connectToHost(ui->ipEdit->text(), ui->portBox->value());
+}
+
+
+void MainWindow::on_listenButton_clicked()
+{
+    server = new QTcpServer(this);
+    server->listen(QHostAddress::Any, ui->portBox->value());
+    connect(server, SIGNAL(newConnection()), this, SLOT(newConnection()));
+    ui->connectButton->setDisabled(true);
+    ui->listenButton->setDisabled(true);
 }
 
 void MainWindow::getData()
 {
     socketData = socket->readAll();
-    qDebug()<<socketData;
+    QTextStream ss(&socketData);
+    QString ind = ss.readLine();
+    if(ind == "Gomoku New Game")
+    {
+        int x;ss>>x;
+        if(QMessageBox::question(this, QString("New Game"), QString("Create a new game?")) != QMessageBox::Yes){
+            socket->write("Gomoku New Game Reject");
+            return;
+        }
+        gameScene->type = x;
+        flag.New = 2;
+        socket->write("Gomoku New Game Accept");
+        on_newButton_clicked();
+
+    }
+    if(ind == "Gomoku New Game Reject")
+    {
+        flag.New = 0;
+    }
+    if(ind == "Gomoku New Game Accept")
+    {
+        flag.New = 2;
+        on_newButton_clicked();
+    }
+    if(ind == "Gomoku Stop Game")
+    {
+    }
+    if(ind == "Gomoku Start Game")
+    {
+    }
+    if(ind == "Gomoku Pause Game")
+    {
+    }
+    if(ind == "Gomoku Undo Game")
+    {
+    }
+    if(ind == "Gomoku Load Game")
+    {
+    }
+    if(ind == "Gomoku Save Game")
+    {
+    }
 }
 
 MainWindow::~MainWindow()
@@ -105,13 +177,31 @@ void MainWindow::on_startButton_clicked()
 
 void MainWindow::on_newButton_clicked()
 {
-    gameScene->Init();
-    ui->startButton->setEnabled(true);
-    ui->pauseButton->setEnabled(false);
-    timer->stop();
-    this->timeNum = 0;
-    ui->player1Time->display(0);
-    ui->player2Time->display(0);
+
+    switch(flag.New)
+    {
+    case 2:
+        gameScene->Init();
+        ui->newButton->setEnabled(true);
+        ui->startButton->setEnabled(true);
+        ui->loadButton->setEnabled(true);
+        ui->saveButton->setEnabled(true);
+        ui->startButton->setEnabled(true);
+        ui->pauseButton->setEnabled(false);
+        ui->undoButton->setEnabled(false);
+        timer->stop();
+        this->timeNum = 0;
+        ui->player1Time->display(0);
+        ui->player2Time->display(0);
+        flag.New = 0;
+        break;
+    case 0:
+        flag.New = 1;
+        gameScene->type = qrand()%2;
+        QString tmp = QString("Gomoku New Game\n%1").arg(gameScene->type^1);
+        socket->write(tmp.toLocal8Bit());
+        break;
+    }
 }
 
 void MainWindow::on_stopButton_clicked()
@@ -164,3 +254,4 @@ void MainWindow::on_loadButton_clicked()
     gameScene->fromString(file.readAll());
     file.close();
 }
+
