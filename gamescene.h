@@ -23,17 +23,20 @@ public:
     QString toString();
     bool fromString(QString str);
     bool disable;
+    bool move;
     int type;
 public slots:
     void Init();
-    bool Undo();
+    bool Undo(int x);
     void Resize(int _size);
     void Press(int x, int y, int pressed);
     void Move(int x, int y);
     void Release(int x, int y, int pressed);
     void drawMap(int x=0, int y=0);
+    void setChess(int x, int y);
 signals:
-    void exchange(int);
+    void moveChess(int x, int y);
+    void gameEnd(int x);
 private:
     int map[15][15];
     QGraphicsEllipseItem *circle[15][15];

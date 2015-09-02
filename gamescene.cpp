@@ -5,7 +5,7 @@
 
 
 GameScene::GameScene(QWidget *parent, int _type)
-    :QGraphicsScene(parent), n(14), pressed(-1), type(_type),  disable(true)
+    :QGraphicsScene(parent), n(14), pressed(-1), type(_type), disable(true), move(false)
 {
     //this->setBackgroundBrush(Qt::yellow);
     Init();
@@ -25,7 +25,7 @@ QString GameScene::toString()
     QString tmp="";
     const QString Head = "Gomoku Save Data";
     QTextStream ss(&tmp);
-    ss<<Head<<endl<<type<<endl;
+    ss<<Head<<endl;
     for(int i=0;i<2;i++){
         ss<<history[i].size()<<" "<<undo[i]<<endl;
         for(int j=0;j<history[i].size();j++)
@@ -36,6 +36,14 @@ QString GameScene::toString()
     return tmp;
 }
 
+void GameScene::setChess(int x, int y)
+{
+    map[x][y]=(type^1);
+    history[type^1].push_back(QPoint(x, y));
+    move^=1;
+    drawMap();
+}
+
 bool GameScene::fromString(QString str)
 {
     const QString Head = "Gomoku Save Data";
@@ -43,7 +51,6 @@ bool GameScene::fromString(QString str)
     QString tmp="";
     tmp = ss.readLine();
     if(tmp != Head)return false;
-    ss >> type;
     memset(map, -1, sizeof(map));
     for(int i=0;i<2;i++){
         history[i].clear();
@@ -57,6 +64,8 @@ bool GameScene::fromString(QString str)
     }
     disable = true;
     pressed = -1;
+    bool current = (history[0].size()>history[1].size());
+    move = (current == type);
     drawMap();
     return true;
 }
@@ -82,11 +91,15 @@ void GameScene::drawMap(int x, int y)
         QColor col = QColor((pressed?(Qt::black):(Qt::blue)));
         this->addEllipse(x-del/2, y-del/2, Psize/2, Psize/2, QPen(col), QBrush(col));
     }
-    if(disable){
+    if(disable)
+    {
         QColor col = QColor(Qt::gray);
         col.setAlpha(128);
         this->addRect(0, 0, size, size, QPen(col), QBrush(col));
     }
+    else
+        check();
+
 }
 
 void GameScene::Resize(int _size)
@@ -110,16 +123,22 @@ void GameScene::Move(int x, int y)
     drawMap(x, y);
 }
 
-bool GameScene::Undo()
+bool GameScene::Undo(int x)
 {
-    if(!history[0].size() || !history[1].size())return false;
-    for(int i=0;i<2;i++)
+    int current = (history[0].size()>history[1].size());
+    if(history[x].size())
     {
-        map[history[i].back().x()][history[i].back().y()]=-1;
-        history[i].removeLast();
-    }
+        map[history[x].back().x()][history[x].back().y()]=-1;
+        history[x].removeLast();
+        if(current == x){
+            map[history[x^1].back().x()][history[x^1].back().y()]=-1;
+            history[x^1].removeLast();
+        }
+        move = (type == x);
+    }else return false;
     drawMap();
-    return (++undo[type] >= 2);
+    ++undo[x];
+    return (undo[type] >= 2);
 }
 
 void GameScene::Release(int x, int y, int _type)
@@ -133,15 +152,15 @@ void GameScene::Release(int x, int y, int _type)
             {
                 if(map[i][j] == -1){
                     map[i][j] = type;//, type^=1;
+                    move^=1;
                     memset(undo, 0, sizeof(undo));
                     history[map[i][j]].push_back(QPoint(i, j));
-                    emit exchange(type);
+                    emit moveChess(i, j);
                 }
                 break;
             }
         }
     drawMap();
-    check();
 }
 
 int GameScene::check()
@@ -156,8 +175,7 @@ int GameScene::check()
                 for(int fx=i, fy=j;fx>=0 && fy>=0 && fx<=n && fy<=n && map[fx][fy]==map[i][j];fx+=dx[k], fy+=dy[k])num++;
                 if(num >= 5)
                 {
-                    QMessageBox::information(0, QString("Game End"), QString("Player%1 Win!").arg(map[i][j]+1));
-                    Init();
+                    emit gameEnd(map[i][j]);
                     return map[i][j];
                 }
             }

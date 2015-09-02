@@ -28,7 +28,7 @@ public:
     ~MainWindow();
 
 private slots:
-    void timeout();
+    void timeout(bool f=true);
 
     void connectError(QAbstractSocket::SocketError error);
 
@@ -48,7 +48,7 @@ private slots:
 
     void on_stopButton_clicked();
 
-    void on_undoButton_clicked();
+    void on_undoButton_clicked(int x=0);
 
     void on_saveButton_clicked();
 
@@ -56,8 +56,11 @@ private slots:
 
     void on_listenButton_clicked();
 
-public slots:
-    void exchange(int x);
+    void moveChess(int x, int y);
+
+    void gameEnd(int x);
+
+    void disconnected();
 
 private:
     GameScene *gameScene;
@@ -65,8 +68,7 @@ private:
     QTcpSocket *socket;
     QTcpServer *server;
     QString socketData;
-    QTimer *timer;
-    int timeNum;
+    QTimer *timer, *webTimer;
     MessageFlag flag;
 };
 
