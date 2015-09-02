@@ -11,21 +11,21 @@ GameView::GameView(QWidget *parent)
 
 void GameView::mousePressEvent(QMouseEvent  *event)
 {
-    if(Scene->disable)return;
+    if(Scene->disable || !Scene->move)return;
     QPointF tmp = mapToScene(event->pos());
     Scene->Press(tmp.x(), tmp.y(), event->button());
 }
 
 void GameView::mouseMoveEvent(QMouseEvent  *event)
 {
-    if(Scene->disable)return;
+    if(Scene->disable || !Scene->move)return;
     QPointF tmp = mapToScene(event->pos());
     Scene->Move(tmp.x(), tmp.y());
 }
 
 void GameView::mouseReleaseEvent(QMouseEvent  *event)
 {
-    if(Scene->disable)return;
+    if(Scene->disable || !Scene->move)return;
     QPointF tmp = mapToScene(event->pos());
     Scene->Release(tmp.x(), tmp.y(), event->button());
 }
