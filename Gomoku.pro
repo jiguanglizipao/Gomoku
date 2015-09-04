@@ -18,11 +18,14 @@ SOURCES += main.cpp\
         mainwindow.cpp \
     gamescene.cpp \
     gameview.cpp \
+    ipdialog.cpp
 
 HEADERS  += mainwindow.h \
     gamescene.h \
     gameview.h \
+    ipdialog.h
 
-FORMS  += mainwindow.ui
+FORMS  += mainwindow.ui \
+    ipdialog.ui
 
 RESOURCES += res.qrc

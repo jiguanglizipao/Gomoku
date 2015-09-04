@@ -40,7 +40,7 @@ signals:
 private:
     int map[15][15];
     QGraphicsEllipseItem *circle[15][15];
-    QVector<QPoint> history[2];
+    QVector<QPair<int, QPoint> > history;
     int size, pressed, undo[2];
     const int n;
     double Psize;

@@ -6,6 +6,8 @@
 #include <QMessageBox>
 #include <QSignalMapper>
 #include <QDebug>
+#include <QHostInfo>
+#include "ipdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -41,9 +43,9 @@ void MainWindow::gameEnd(int x)
 {
     timer->stop();
     if(x == gameScene->type)
-        QMessageBox::information(this, QString("Game End"), QString("You Win!"));
+        QMessageBox::information(this, QString("Game End"), QString("You Win!\nPlayer1 Time: %1s\nPlayer2 Time: %2s").arg(player1).arg(player2));
     else
-        QMessageBox::information(this, QString("Game End"), QString("You Lose!"));
+        QMessageBox::information(this, QString("Game End"), QString("You Lose!\nPlayer1 Time: %1s\nPlayer2 Time: %2s").arg(player1).arg(player2));
     ui->pauseButton->setEnabled(false);
     ui->stopButton->setEnabled(false);
     ui->undoButton->setEnabled(false);
@@ -68,7 +70,24 @@ void MainWindow::connected()
 
 void MainWindow::disconnected()
 {
-    QMessageBox::information(this, "Disconnected", "Disconnected");
+    timer->stop();
+    webTimer->stop();
+    if(socket)
+    {
+        disconnect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(disconnected()));
+        //disconnect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError(QAbstractSocket::SocketError)));
+        disconnect(socket, SIGNAL(connected()), this, SLOT(connected()));
+        disconnect(socket, SIGNAL(readyRead()), this, SLOT(getData()));
+        disconnect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
+        socket->disconnectFromHost();
+        socket = 0;
+    }
+
+    if(server)
+    {
+        server->deleteLater();
+        server = 0;
+    }
 
     ui->disconnectButton->setEnabled(false);
     ui->listenButton->setEnabled(true);
@@ -84,27 +103,10 @@ void MainWindow::disconnected()
     ui->pauseButton->setEnabled(false);
     ui->undoButton->setEnabled(false);
 
-    timer->stop();
     ui->player1Time->display(0);
     ui->player2Time->display(0);
 
-    webTimer->stop();
-
-    if(socket)
-    {
-        disconnect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(disconnected()));
-        disconnect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError(QAbstractSocket::SocketError)));
-        disconnect(socket, SIGNAL(connected()), this, SLOT(connected()));
-        disconnect(socket, SIGNAL(readyRead()), this, SLOT(getData()));
-        disconnect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
-        socket = 0;
-    }
-
-    if(server)
-    {
-        server->deleteLater();
-        server = 0;
-    }
+    QMessageBox::information(this, "Disconnected", "Disconnected");
 
 }
 
@@ -112,7 +114,7 @@ void MainWindow::newConnection()
 {
     QMessageBox::information(this, "Connected", "New client connected to this server successfuly");
     socket = server->nextPendingConnection();
-    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError(QAbstractSocket::SocketError)));
+    //connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError(QAbstractSocket::SocketError)));
     connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(disconnected()));
     connect(socket, SIGNAL(connected()), this, SLOT(connected()));
     connect(socket, SIGNAL(readyRead()), this, SLOT(getData()));
@@ -130,43 +132,63 @@ void MainWindow::timeout(bool f)
         QString tmp = QString("Gomoku Timer Timeout");
         socket->write(tmp.toLocal8Bit());
         if(gameScene->type == 0)
-            ui->player1Time->display(ui->player1Time->value()-1);
+            ui->player1Time->display(ui->player1Time->value()-1), player1++;
         else
-            ui->player2Time->display(ui->player2Time->value()-1);
+            ui->player2Time->display(ui->player2Time->value()-1), player2++;
     }
     else
     {
         if(gameScene->type == 0)
-            ui->player2Time->display(ui->player2Time->value()-1);
+            ui->player2Time->display(ui->player2Time->value()-1), player2++;
         else
-            ui->player1Time->display(ui->player1Time->value()-1);
+            ui->player1Time->display(ui->player1Time->value()-1), player1++;
 
     }
-    if(ui->player1Time->value() < 0)gameEnd(1);
-    if(ui->player2Time->value() < 0)gameEnd(0);
+    if(ui->player1Time->value() <= 0){
+        ui->player1Time->display(20);
+        ui->player2Time->display(20);
+        gameScene->move^=1;
+    }
+    if(ui->player2Time->value() <= 0){
+        ui->player1Time->display(20);
+        ui->player2Time->display(20);
+        gameScene->move^=1;
+    }
 }
 
 
 void MainWindow::on_connectButton_clicked()
 {
+    IPDialog a;
+    if(!a.exec())return;
+
     socket = new QTcpSocket(this);
-    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError(QAbstractSocket::SocketError)));
+    //connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError(QAbstractSocket::SocketError)));
     connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(disconnected()));
     connect(socket, SIGNAL(connected()), this, SLOT(connected()));
     connect(socket, SIGNAL(readyRead()), this, SLOT(getData()));
     connect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
-    socket->connectToHost(ui->ipEdit->text(), ui->portBox->value());
+    socket->connectToHost(a.ip, a.port);
 }
 
 
 void MainWindow::on_listenButton_clicked()
 {
     server = new QTcpServer(this);
-    if(!server->listen(QHostAddress::Any, ui->portBox->value()))
+    if(!server->listen(QHostAddress::Any))
     {
-        QMessageBox::critical(this, tr("ERROR!"), tr("Can not listen port %1.").arg(ui->portBox->value()));
+        QMessageBox::critical(this, tr("ERROR!"), tr("Can not listen port %1.").arg(server->serverPort()));
         return;
     }
+    QHostInfo info = QHostInfo::fromName(QHostInfo::localHostName());
+    QString tmp="Server IP:\n";
+    for(int i=0;i<info.addresses().size();i++)
+    {
+        if(info.addresses()[i].protocol() == QAbstractSocket::IPv4Protocol)
+                 tmp+=QString("    ")+info.addresses()[i].toString()+QString("\n");
+    }
+    tmp+=QString("\nServer Port:\n    %1").arg(server->serverPort());
+    QMessageBox::information(this, "Listen Success", tmp);
     connect(server, SIGNAL(newConnection()), this, SLOT(newConnection()));
     ui->connectButton->setDisabled(true);
     ui->listenButton->setDisabled(true);
@@ -445,6 +467,7 @@ void MainWindow::on_newButton_clicked()
         timer->stop();
         ui->player1Time->display(20);
         ui->player2Time->display(20);
+        player1=player2=0;
         flag.New = 0;
         break;
     case 0:

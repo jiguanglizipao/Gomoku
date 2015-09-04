@@ -70,6 +70,7 @@ private:
     QString socketData;
     QTimer *timer, *webTimer;
     MessageFlag flag;
+    int player1, player2;
 };
 
 #endif // MAINWINDOW_H

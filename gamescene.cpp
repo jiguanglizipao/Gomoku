@@ -15,31 +15,27 @@ void GameScene::Init()
 {
     disable = true;
     memset(map, -1, sizeof(map));
-    history[0].clear();
-    history[1].clear();
+    history.clear();
     drawMap();
 }
 
 QString GameScene::toString()
 {
     QString tmp="";
-    const QString Head = "Gomoku Save Data";
+    const QString Head = "Gomoku Save Data\n";
     QTextStream ss(&tmp);
-    ss<<Head<<endl;
-    for(int i=0;i<2;i++){
-        ss<<history[i].size()<<" "<<undo[i]<<endl;
-        for(int j=0;j<history[i].size();j++)
-            ss<<history[i][j].x()<<" "<<history[i][j].y()<<" ";
-        ss<<endl;
-    }
-    qDebug()<<tmp;
+    ss<<Head+QString(move?type:(type^1))<<endl;
+    ss<<history.size()<<endl;
+    for(int j=0;j<history.size();j++)
+        ss<<history[j].first<<" "<<history[j].second.x()<<" "<<history[j].second.y()<<" ";
+    ss<<endl<<undo[0]<<" "<<undo[1]<<endl;
     return tmp;
 }
 
 void GameScene::setChess(int x, int y)
 {
     map[x][y]=(type^1);
-    history[type^1].push_back(QPoint(x, y));
+    history.push_back(qMakePair(type^1, QPoint(x, y)));
     move^=1;
     drawMap();
 }
@@ -51,20 +47,20 @@ bool GameScene::fromString(QString str)
     QString tmp="";
     tmp = ss.readLine();
     if(tmp != Head)return false;
+    int current;
+    ss>>current;
     memset(map, -1, sizeof(map));
-    for(int i=0;i<2;i++){
-        history[i].clear();
-        int n;ss>>n>>undo[i];
-        for(int j=0;j<n;j++)
-        {
-            int x, y;ss>>x>>y;
-            map[x][y]=i;
-            history[i].push_back(QPoint(x, y));
-        }
+    history.clear();
+    int n;ss>>n;
+    for(int j=0;j<n;j++)
+    {
+        int t, x, y;ss>>t>>x>>y;
+        map[x][y]=t;
+        history.push_back(qMakePair(t, QPoint(x, y)));
     }
+    ss>>undo[0]>>undo[1];
     disable = true;
     pressed = -1;
-    bool current = (history[0].size()>history[1].size());
     move = (current == type);
     drawMap();
     return true;
@@ -125,14 +121,19 @@ void GameScene::Move(int x, int y)
 
 bool GameScene::Undo(int x)
 {
-    int current = (history[0].size()>history[1].size());
-    if(history[x].size())
+    int current = (move?type:(type^1));
+    int l = -1;
+    for(int i=history.size()-1;i>=0;i--)if(history[i].first == x)
     {
-        map[history[x].back().x()][history[x].back().y()]=-1;
-        history[x].removeLast();
-        if(current == x){
-            map[history[x^1].back().x()][history[x^1].back().y()]=-1;
-            history[x^1].removeLast();
+        l=i;
+        break;
+    }
+    if(l !=-1)
+    {
+        for(int i=history.size();i>l;i--)
+        {
+            map[history.back().second.x()][history.back().second.y()]=-1;
+            history.removeLast();
         }
         move = (type == x);
     }else return false;
@@ -154,7 +155,7 @@ void GameScene::Release(int x, int y, int _type)
                     map[i][j] = type;//, type^=1;
                     move^=1;
                     memset(undo, 0, sizeof(undo));
-                    history[map[i][j]].push_back(QPoint(i, j));
+                    history.push_back(qMakePair(type, QPoint(i, j)));
                     emit moveChess(i, j);
                 }
                 break;
