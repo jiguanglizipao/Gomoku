@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1024</width>
-    <height>768</height>
+    <width>800</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,11 +18,8 @@
     <normaloff>:/res/flowfree.png</normaloff>:/res/flowfree.png</iconset>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout_4">
-    <item>
-     <widget class="GameView" name="gameView"/>
-    </item>
-    <item>
+   <layout class="QGridLayout" name="gridLayout_2">
+    <item row="0" column="2" rowspan="2">
      <layout class="QVBoxLayout" name="verticalLayout_3">
       <item>
        <widget class="QGroupBox" name="webBox">
@@ -370,6 +367,43 @@
       </item>
      </layout>
     </item>
+    <item row="1" column="1">
+     <layout class="QVBoxLayout" name="verticalLayout_4">
+      <item>
+       <widget class="GameView" name="gameView"/>
+      </item>
+      <item>
+       <widget class="QTextEdit" name="chatBrowser">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="readOnly">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QLineEdit" name="chatEdit"/>
+        </item>
+        <item>
+         <widget class="QPushButton" name="sendButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="text">
+           <string>Send</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
    </layout>
   </widget>
  </widget>
@@ -384,7 +418,24 @@
  <resources>
   <include location="res.qrc"/>
  </resources>
- <connections/>
+ <connections>
+  <connection>
+   <sender>chatEdit</sender>
+   <signal>returnPressed()</signal>
+   <receiver>sendButton</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>458</x>
+     <y>738</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>705</x>
+     <y>743</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
  <slots>
   <slot>loadGame(QString)</slot>
  </slots>

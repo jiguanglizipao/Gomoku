@@ -91,10 +91,13 @@ void GameScene::drawMap(int x, int y)
     {
         QColor col = QColor(Qt::gray);
         col.setAlpha(128);
-        this->addRect(0, 0, size, size, QPen(col), QBrush(col));
+        this->addRect(-size*2, -size*2, size*4, size*4, QPen(col), QBrush(col));
     }
     else
+    {
+        this->setBackgroundBrush(QBrush(Qt::white));
         check();
+    }
 
 }
 

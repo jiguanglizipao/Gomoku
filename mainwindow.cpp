@@ -7,6 +7,7 @@
 #include <QSignalMapper>
 #include <QDebug>
 #include <QHostInfo>
+#include <QDateTime>
 #include "ipdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
@@ -66,6 +67,7 @@ void MainWindow::connected()
     ui->newButton->setEnabled(true);
     webTimer->start(1000);
     ui->disconnectButton->setEnabled(true);
+    ui->sendButton->setEnabled(true);
 }
 
 void MainWindow::disconnected()
@@ -92,6 +94,8 @@ void MainWindow::disconnected()
     ui->disconnectButton->setEnabled(false);
     ui->listenButton->setEnabled(true);
     ui->connectButton->setEnabled(true);
+    ui->sendButton->setEnabled(false);
+    ui->chatBrowser->clear();
 
     gameScene->Init();
     ui->newButton->setEnabled(false);
@@ -122,6 +126,7 @@ void MainWindow::newConnection()
     ui->newButton->setEnabled(true);
     webTimer->start(1000);
     ui->disconnectButton->setEnabled(true);
+    ui->sendButton->setEnabled(true);
 }
 
 void MainWindow::timeout(bool f)
@@ -197,7 +202,7 @@ void MainWindow::on_listenButton_clicked()
 
 void MainWindow::getData()
 {
-    socketData = socket->readAll();
+    socketData = QString::fromLocal8Bit(socket->readAll());
     QTextStream ss(&socketData);
     QString ind = ss.readLine();
     qDebug()<<ind;
@@ -383,6 +388,13 @@ void MainWindow::getData()
     if(ind == "Gomoku Timer Timeout")
     {
         timeout(false);
+    }
+
+    if(ind == "Gomoku Chat")
+    {
+        QString time = ss.readLine(), mes = ss.readAll();
+        ui->chatBrowser->insertHtml(QString("<p><font color=\"blue\"> %1</font><br>&nbsp;&nbsp;%2<br></p>").arg(time).arg(mes));
+        ui->chatBrowser->moveCursor(QTextCursor::End);
     }
 }
 
@@ -596,3 +608,13 @@ void MainWindow::on_loadButton_clicked()
 
 }
 
+
+void MainWindow::on_sendButton_clicked()
+{
+    if(ui->chatEdit->text().isEmpty())return;
+    QString tmp = QString("Gomoku Chat\n%1\n%2").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss")).arg(ui->chatEdit->text());
+    socket->write(tmp.toLocal8Bit());
+    ui->chatBrowser->insertHtml(QString("<p><font color=\"green\"> %1</font><br>&nbsp;&nbsp;%2<br></p>").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss")).arg(ui->chatEdit->text()));
+    ui->chatBrowser->moveCursor(QTextCursor::End);
+    ui->chatEdit->clear();
+}

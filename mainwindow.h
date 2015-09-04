@@ -62,6 +62,8 @@ private slots:
 
     void disconnected();
 
+    void on_sendButton_clicked();
+
 private:
     GameScene *gameScene;
     Ui::MainWindow *ui;
