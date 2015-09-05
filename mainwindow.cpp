@@ -28,6 +28,8 @@ MainWindow::MainWindow(QWidget *parent) :
 
     connect(ui->disconnectButton, SIGNAL(pressed()), this, SLOT(disconnected()));
 
+    qsrand(QTime(0,0,0).secsTo(QTime::currentTime()));
+
 }
 
 void MainWindow::moveChess(int x, int y)
