@@ -4,11 +4,14 @@
 #include <QTextStream>
 
 
+
 GameScene::GameScene(QWidget *parent, int _type)
     :QGraphicsScene(parent), n(14), pressed(-1), type(_type), disable(true), move(false)
 {
-    //this->setBackgroundBrush(Qt::yellow);
+    this->setBackgroundBrush(QBrush(QColor(222, 184, 135)));
     Init();
+    black.load("://res/black.png");
+    white.load("://res/white.png");
 }
 
 void GameScene::Init()
@@ -22,13 +25,13 @@ void GameScene::Init()
 QString GameScene::toString()
 {
     QString tmp="";
-    const QString Head = "Gomoku Save Data\n";
+    const QString Head = "Gomoku Save Data";
     QTextStream ss(&tmp);
-    ss<<Head+QString(move?type:(type^1))<<endl;
+    ss<<Head<<endl<<int(move?type:(type^1))<<endl;
     ss<<history.size()<<endl;
     for(int j=0;j<history.size();j++)
-        ss<<history[j].first<<" "<<history[j].second.x()<<" "<<history[j].second.y()<<" ";
-    ss<<endl<<undo[0]<<" "<<undo[1]<<endl;
+        ss<<history[j].first<<" "<<history[j].second.x()<<" "<<history[j].second.y()<<endl;
+    ss<<undo[0]<<" "<<undo[1]<<endl;
     return tmp;
 }
 
@@ -42,6 +45,7 @@ void GameScene::setChess(int x, int y)
 
 bool GameScene::fromString(QString str)
 {
+    qDebug()<<str;
     const QString Head = "Gomoku Save Data";
     QTextStream ss(&str);
     QString tmp="";
@@ -49,12 +53,14 @@ bool GameScene::fromString(QString str)
     if(tmp != Head)return false;
     int current;
     ss>>current;
+    qDebug()<<current;
     memset(map, -1, sizeof(map));
     history.clear();
     int n;ss>>n;
     for(int j=0;j<n;j++)
     {
         int t, x, y;ss>>t>>x>>y;
+        qDebug()<<t<<" "<<x<<" "<<y;
         map[x][y]=t;
         history.push_back(qMakePair(t, QPoint(x, y)));
     }
@@ -73,19 +79,26 @@ void GameScene::drawMap(int x, int y)
     for(int i=0;i<n;i++)
         for(int j=0;j<n;j++)
         {
-            QPen pen = QPen(Qt::gray);
-            QBrush brush = QBrush(Qt::white);
+            QPen pen = QPen(Qt::black);
+            QBrush brush = QBrush(QColor(222, 184, 135));
             this->addRect(i*Psize+del, j*Psize+del, Psize, Psize, pen, brush);
         }
     for(int i=0;i<=n;i++)
         for(int j=0;j<=n;j++){
             QColor col = QColor((map[i][j]?(Qt::black):(Qt::blue)));
             circle[i][j]=this->addEllipse(i*Psize+del-del/2, j*Psize+del-del/2, Psize/2, Psize/2, QPen(col), QBrush(col));
-            if(map[i][j]==-1)circle[i][j]->setVisible(false);
+            circle[i][j]->setVisible(false);
+            if(map[i][j]!=-1)
+            {
+                QPixmap img = (map[i][j])?QPixmap::fromImage(white.scaled(Psize/2, Psize/2)):QPixmap::fromImage(black.scaled(Psize/2, Psize/2));
+                QGraphicsPixmapItem *tmp = this->addPixmap(img);
+                tmp->setPos(i*Psize+del-del/2, j*Psize+del-del/2);
+            }
         }
     if(pressed <= 1 && pressed >=0){
-        QColor col = QColor((pressed?(Qt::black):(Qt::blue)));
-        this->addEllipse(x-del/2, y-del/2, Psize/2, Psize/2, QPen(col), QBrush(col));
+        QPixmap img = (pressed)?QPixmap::fromImage(white.scaled(Psize/2, Psize/2)):QPixmap::fromImage(black.scaled(Psize/2, Psize/2));
+        QGraphicsPixmapItem *tmp = this->addPixmap(img);
+        tmp->setPos(x-del/2, y-del/2);
     }
     if(disable)
     {
@@ -94,11 +107,7 @@ void GameScene::drawMap(int x, int y)
         this->addRect(-size*2, -size*2, size*4, size*4, QPen(col), QBrush(col));
     }
     else
-    {
-        this->setBackgroundBrush(QBrush(Qt::white));
         check();
-    }
-
 }
 
 void GameScene::Resize(int _size)

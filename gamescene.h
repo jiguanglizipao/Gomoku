@@ -10,9 +10,9 @@
 #include <QVector>
 #include <QSound>
 #include <QGraphicsEllipseItem>
-#include "gamesolver.h"
 #include <QVector>
 #include <QPair>
+#include <QImage>
 
 class GameScene : public QGraphicsScene
 {
@@ -45,6 +45,7 @@ private:
     const int n;
     double Psize;
     int check();
+    QImage black, white;
 };
 
 #endif // GAMESCENE_H
