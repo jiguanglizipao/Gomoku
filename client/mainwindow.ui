@@ -51,12 +51,15 @@
           </spacer>
          </item>
          <item>
-          <widget class="QPushButton" name="listenButton">
+          <widget class="QListWidget" name="playerList">
            <property name="enabled">
-            <bool>true</bool>
+            <bool>false</bool>
            </property>
-           <property name="text">
-            <string>Listen</string>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
            </property>
           </widget>
          </item>
@@ -426,12 +429,12 @@
    <slot>click()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>458</x>
-     <y>738</y>
+     <x>407</x>
+     <y>788</y>
     </hint>
     <hint type="destinationlabel">
-     <x>705</x>
-     <y>743</y>
+     <x>498</x>
+     <y>788</y>
     </hint>
    </hints>
   </connection>

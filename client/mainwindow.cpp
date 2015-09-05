@@ -8,12 +8,13 @@
 #include <QDebug>
 #include <QHostInfo>
 #include <QDateTime>
+#include <QInputDialog>
 #include "ipdialog.h"
 
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    flag(), socket(0), server(0)
+    flag(), socket(0)
 {
     ui->setupUi(this);
     gameScene = new GameScene(this);
@@ -25,8 +26,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(timer, SIGNAL(timeout()), this, SLOT(timeout()));
     webTimer = new QTimer(this);
     connect(webTimer, SIGNAL(timeout()), this, SLOT(getData()));
-
-    connect(ui->disconnectButton, SIGNAL(pressed()), this, SLOT(disconnected()));
 
     qsrand(QTime(0,0,0).secsTo(QTime::currentTime()));
 
@@ -71,11 +70,16 @@ void MainWindow::connected()
 {
     QMessageBox::information(this, "Connected", "Connected to server successfuly");
     ui->connectButton->setDisabled(true);
-    ui->listenButton->setDisabled(true);
-    ui->newButton->setEnabled(true);
-    webTimer->start(1000);
-    ui->disconnectButton->setEnabled(true);
     ui->sendButton->setEnabled(true);
+    ui->playerList->setEnabled(true);
+    webTimer->start(1000);
+    setNickname();
+}
+
+void MainWindow::setNickname()
+{
+    Nickname = QInputDialog::getText(this, "Set Nickname", "Please Enter a Nickname");
+    socket->write(QString("Gomoku Set Nickname\n%1").arg(Nickname).toLocal8Bit());
 }
 
 void MainWindow::disconnected()
@@ -93,14 +97,8 @@ void MainWindow::disconnected()
         socket = 0;
     }
 
-    if(server)
-    {
-        server->deleteLater();
-        server = 0;
-    }
 
     ui->disconnectButton->setEnabled(false);
-    ui->listenButton->setEnabled(true);
     ui->connectButton->setEnabled(true);
     ui->sendButton->setEnabled(false);
     ui->chatBrowser->clear();
@@ -118,23 +116,10 @@ void MainWindow::disconnected()
     ui->player1Time->display(0);
     ui->player2Time->display(0);
 
+    ui->playerList->setEnabled(false);
+
     QMessageBox::information(this, "Disconnected", "Disconnected");
 
-}
-
-void MainWindow::newConnection()
-{
-    QMessageBox::information(this, "Connected", "New client connected to this server successfuly");
-    socket = server->nextPendingConnection();
-    //connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(connectError(QAbstractSocket::SocketError)));
-    connect(socket, SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(disconnected()));
-    connect(socket, SIGNAL(connected()), this, SLOT(connected()));
-    connect(socket, SIGNAL(readyRead()), this, SLOT(getData()));
-    connect(socket, SIGNAL(disconnected()), this, SLOT(disconnected()));
-    ui->newButton->setEnabled(true);
-    webTimer->start(1000);
-    ui->disconnectButton->setEnabled(true);
-    ui->sendButton->setEnabled(true);
 }
 
 void MainWindow::timeout(bool f)
@@ -184,29 +169,6 @@ void MainWindow::on_connectButton_clicked()
     socket->connectToHost(a.ip, a.port);
 }
 
-
-void MainWindow::on_listenButton_clicked()
-{
-    server = new QTcpServer(this);
-    if(!server->listen(QHostAddress::Any))
-    {
-        QMessageBox::critical(this, tr("ERROR!"), tr("Can not listen port %1.").arg(server->serverPort()));
-        return;
-    }
-    QHostInfo info = QHostInfo::fromName(QHostInfo::localHostName());
-    QString tmp="Server IP:\n";
-    for(int i=0;i<info.addresses().size();i++)
-    {
-        //if(info.addresses()[i].protocol() == QAbstractSocket::IPv4Protocol)
-                 tmp+=QString("    ")+info.addresses()[i].toString()+QString("\n");
-    }
-    tmp+=QString("\nServer Port:\n    %1").arg(server->serverPort());
-    QMessageBox::information(this, "Listen Success", tmp);
-    connect(server, SIGNAL(newConnection()), this, SLOT(newConnection()));
-    ui->connectButton->setDisabled(true);
-    ui->listenButton->setDisabled(true);
-    ui->disconnectButton->setEnabled(true);
-}
 
 void MainWindow::getData()
 {
@@ -403,6 +365,74 @@ void MainWindow::getData()
         QString name = ss.readLine(), time = ss.readLine(), mes = ss.readAll();
         ui->chatBrowser->insertHtml(QString("<p><font color=\"blue\"> %1&nbsp;&nbsp;%2</font><br>&nbsp;&nbsp;%3<br></p>").arg(name).arg(time).arg(mes));
         ui->chatBrowser->moveCursor(QTextCursor::End);
+    }
+
+    if(ind == "Gomoku Set Nickname Reject")
+    {
+        this->setNickname();
+    }
+
+    if(ind == "Gomoku Client List")
+    {
+        ui->playerList->clear();
+        while(!ss.atEnd())
+        {
+            QString tmp = ss.readLine();
+            ui->playerList->addItem(tmp);
+        }
+    }
+
+    if(ind == "Gomoku Play With")
+    {
+        QString tmp = ss.readLine();
+        if(QMessageBox::question(this, QString("Play With"), QString("Play With %1?").arg(tmp)) == QMessageBox::Yes)
+        {
+            socket->write(QString("Gomoku Play With Accept\n").toLocal8Bit());
+            ui->newButton->setEnabled(true);
+            ui->playerList->setEnabled(false);
+            ui->disconnectButton->setEnabled(true);
+        }
+        else
+        {
+            socket->write(QString("Gomoku Play With Reject\n%1").arg(tmp).toLocal8Bit());
+        }
+    }
+
+    if(ind == "Gomoku Play With Reject")
+    {
+        QString tmp = ss.readLine();
+        QMessageBox::information(this, QString("Faild"), QString("You can't play with %1.").arg(tmp));
+        ui->playerList->setEnabled(true);
+    }
+
+    if(ind == "Gomoku Play With Accept")
+    {
+        ui->newButton->setEnabled(true);
+        ui->playerList->setEnabled(false);
+        ui->disconnectButton->setEnabled(true);
+    }
+
+    if(ind == "Gomoku Play With Disconnect")
+    {
+
+        timer->stop();
+        gameScene->Init();
+        ui->newButton->setEnabled(false);
+        ui->stopButton->setEnabled(false);
+        ui->startButton->setEnabled(false);
+        ui->loadButton->setEnabled(false);
+        ui->saveButton->setEnabled(false);
+        ui->startButton->setEnabled(false);
+        ui->pauseButton->setEnabled(false);
+        ui->undoButton->setEnabled(false);
+
+        ui->playerList->setEnabled(true);
+        ui->disconnectButton->setEnabled(false);
+
+        ui->player1Time->display(0);
+        ui->player2Time->display(0);
+
+        QMessageBox::information(this, "Faild", "Your opponent leave");
     }
 }
 
@@ -616,13 +646,42 @@ void MainWindow::on_loadButton_clicked()
 
 }
 
-
 void MainWindow::on_sendButton_clicked()
 {
     if(ui->chatEdit->text().isEmpty())return;
-    QString tmp = QString("Gomoku Chat\n%1\n%2\n%3").arg(QHostInfo::localHostName()).arg(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss")).arg(ui->chatEdit->text());
+    QString tmp = QString("Gomoku Chat\n%1\n%2\n%3").arg(Nickname).arg(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss")).arg(ui->chatEdit->text());
     socket->write(tmp.toLocal8Bit());
-    ui->chatBrowser->insertHtml(QString("<p><font color=\"green\"> %1&nbsp;&nbsp;%2</font><br>&nbsp;&nbsp;%3<br></p>").arg(QHostInfo::localHostName()).arg(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss")).arg(ui->chatEdit->text()));
+    ui->chatBrowser->insertHtml(QString("<p><font color=\"green\"> %1&nbsp;&nbsp;%2</font><br>&nbsp;&nbsp;%3<br></p>").arg(Nickname).arg(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss")).arg(ui->chatEdit->text()));
     ui->chatBrowser->moveCursor(QTextCursor::End);
     ui->chatEdit->clear();
+}
+
+void MainWindow::on_playerList_itemDoubleClicked(QListWidgetItem *item)
+{
+    QString name = item->text();
+    QString tmp = QString("Gomoku Play With\n%1").arg(name);
+    ui->playerList->setEnabled(false);
+    socket->write(tmp.toLocal8Bit());
+}
+
+void MainWindow::on_disconnectButton_clicked()
+{
+    timer->stop();
+    gameScene->Init();
+    ui->newButton->setEnabled(false);
+    ui->stopButton->setEnabled(false);
+    ui->startButton->setEnabled(false);
+    ui->loadButton->setEnabled(false);
+    ui->saveButton->setEnabled(false);
+    ui->startButton->setEnabled(false);
+    ui->pauseButton->setEnabled(false);
+    ui->undoButton->setEnabled(false);
+
+    ui->player1Time->display(0);
+    ui->player2Time->display(0);
+
+    ui->playerList->setEnabled(true);
+    ui->disconnectButton->setEnabled(false);
+
+    socket->write(QString("Gomoku Play With Disconnect").toLocal8Bit());
 }

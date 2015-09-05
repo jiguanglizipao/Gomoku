@@ -7,6 +7,7 @@
 #include <QTcpSocket>
 #include <QTcpServer>
 #include <QTimer>
+#include <QListWidgetItem>
 
 struct MessageFlag
 {
@@ -32,8 +33,6 @@ private slots:
 
     void connectError(QAbstractSocket::SocketError error);
 
-    void newConnection();
-
     void connected();
 
     void getData();
@@ -54,8 +53,6 @@ private slots:
 
     void on_loadButton_clicked();
 
-    void on_listenButton_clicked();
-
     void moveChess(int x, int y);
 
     void gameEnd(int x);
@@ -64,15 +61,19 @@ private slots:
 
     void on_sendButton_clicked();
 
+    void on_playerList_itemDoubleClicked(QListWidgetItem *item);
+
+    void on_disconnectButton_clicked();
+
 private:
     GameScene *gameScene;
     Ui::MainWindow *ui;
     QTcpSocket *socket;
-    QTcpServer *server;
-    QString socketData;
+    QString socketData, Nickname;
     QTimer *timer, *webTimer;
     MessageFlag flag;
     int player1, player2;
+    void setNickname();
 };
 
 #endif // MAINWINDOW_H
