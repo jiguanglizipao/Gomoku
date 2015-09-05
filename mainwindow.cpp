@@ -44,9 +44,15 @@ void MainWindow::gameEnd(int x)
 {
     timer->stop();
     if(x == gameScene->type)
+    {
+        QSound::play("://res/win.wav");
         QMessageBox::information(this, QString("Game End"), QString("You Win!\nPlayer1 Time: %1s\nPlayer2 Time: %2s").arg(player1).arg(player2));
+    }
     else
+    {
+        QSound::play("://res/lose.wav");
         QMessageBox::information(this, QString("Game End"), QString("You Lose!\nPlayer1 Time: %1s\nPlayer2 Time: %2s").arg(player1).arg(player2));
+    }
     ui->pauseButton->setEnabled(false);
     ui->stopButton->setEnabled(false);
     ui->undoButton->setEnabled(false);
@@ -189,7 +195,7 @@ void MainWindow::on_listenButton_clicked()
     QString tmp="Server IP:\n";
     for(int i=0;i<info.addresses().size();i++)
     {
-        if(info.addresses()[i].protocol() == QAbstractSocket::IPv4Protocol)
+        //if(info.addresses()[i].protocol() == QAbstractSocket::IPv4Protocol)
                  tmp+=QString("    ")+info.addresses()[i].toString()+QString("\n");
     }
     tmp+=QString("\nServer Port:\n    %1").arg(server->serverPort());
