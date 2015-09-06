@@ -556,7 +556,7 @@ void MainWindow::on_saveButton_clicked()
 {
     timer->stop();
     QString fileName;
-    fileName = QFileDialog::getSaveFileName(this, tr("Save Game"), QDateTime::currentDateTime().toString("yyyy-MM-dd_hh:mm:ss"), tr("Save Files(*.sav);;All Files(*.*)"));
+    fileName = QFileDialog::getSaveFileName(this, tr("Save Game"), QDateTime::currentDateTime().toString("yyyy-MM-dd_hh-mm-ss"), tr("Save Files(*.sav);;All Files(*.*)"));
     if (fileName == ""){
         timer->start(1000);
         return;
