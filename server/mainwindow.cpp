@@ -113,7 +113,7 @@ void MainWindow::readyRead(QString str)
                     if(game[j].first == tmp || game[j].second == tmp || game[j].first == name[i] || game[j].second == name[i])
                     {
                         game.removeAt(j);
-                        return;
+                        break;
                     }
                 }
                 for(int j=0;j<name.size();j++)if(tmp == name[j])
