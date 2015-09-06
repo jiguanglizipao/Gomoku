@@ -363,7 +363,7 @@ void MainWindow::getData()
     if(ind == "Gomoku Chat")
     {
         QString name = ss.readLine(), time = ss.readLine(), mes = ss.readAll();
-        ui->chatBrowser->insertHtml(QString("<p><font color=\"blue\"> %1&nbsp;&nbsp;%2</font><br>&nbsp;&nbsp;%3<br></p>").arg(name).arg(time).arg(mes));
+        ui->chatBrowser->insertHtml(QString("<p><font color=\"blue\"> %1&nbsp;%2</font><br>&nbsp;&nbsp;%3<br></p>").arg(name).arg(time).arg(mes));
         ui->chatBrowser->moveCursor(QTextCursor::End);
     }
 
@@ -651,7 +651,7 @@ void MainWindow::on_sendButton_clicked()
     if(ui->chatEdit->text().isEmpty())return;
     QString tmp = QString("Gomoku Chat\n%1\n%2\n%3").arg(Nickname).arg(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss")).arg(ui->chatEdit->text());
     socket->write(tmp.toLocal8Bit());
-    ui->chatBrowser->insertHtml(QString("<p><font color=\"green\"> %1&nbsp;&nbsp;%2</font><br>&nbsp;&nbsp;%3<br></p>").arg(Nickname).arg(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss")).arg(ui->chatEdit->text()));
+    ui->chatBrowser->insertHtml(QString("<p><font color=\"green\"> %1&nbsp;%2</font><br>&nbsp;&nbsp;%3<br></p>").arg(Nickname).arg(QDateTime::currentDateTime().toString("yyyy/MM/dd hh:mm:ss")).arg(ui->chatEdit->text()));
     ui->chatBrowser->moveCursor(QTextCursor::End);
     ui->chatEdit->clear();
 }
